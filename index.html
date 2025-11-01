@@ -2,9 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Solitaire</title>
     <style>
+        :root {
+            --card-w: 70px;
+            --card-h: 95px;
+            --gap: 10px;
+            --stack-offset: 20px;
+            --header-h: 40px;
+            --controls-h: 42px;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,14 +23,18 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
             font-family: 'MS Sans Serif', Arial, sans-serif;
             background: #008080;
-            overflow: hidden;
             touch-action: none;
             position: fixed;
-            width: 100%;
-            height: 100%;
+            inset: 0;
         }
 
         #game-container {
@@ -39,6 +54,7 @@
             align-items: center;
             border-bottom: 2px solid #c0c0c0;
             box-shadow: inset -1px -1px 0 #000000, inset 1px 1px 0 #dfdfdf;
+            min-height: var(--header-h);
         }
 
         #title {
@@ -49,7 +65,7 @@
 
         #score-display {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             font-size: 14px;
         }
 
@@ -59,7 +75,10 @@
             border-bottom: 2px solid #808080;
             display: flex;
             gap: 8px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            align-items: center;
+            justify-content: center;
+            min-height: var(--controls-h);
         }
 
         .btn {
@@ -82,32 +101,71 @@
 
         #game-board {
             flex: 1;
-            padding: 15px;
+            padding: var(--gap);
             overflow: auto;
             position: relative;
         }
 
         #board-content {
-            min-height: 600px;
             position: relative;
+            min-height: 600px;
         }
 
         .card-slot {
             position: absolute;
-            width: 70px;
-            height: 95px;
+            width: var(--card-w);
+            height: var(--card-h);
             border: 2px dashed rgba(255,255,255,0.3);
-            border-radius: 5px;
+            border-radius: 6px;
             background: rgba(0,0,0,0.1);
+        }
+
+        /* Stock slot special styling */
+        .card-slot.stock-slot {
+            position: relative;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        /* Recycle icon - shown only when stock is empty */
+        .card-slot.stock-slot .recycle-icon {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .card-slot.stock-slot.empty .recycle-icon {
+            display: flex;
+        }
+
+        .card-slot.stock-slot .recycle-icon::before {
+            content: "";
+            width: 48%;
+            height: 48%;
+            opacity: 0.7;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="%23ffffff"><path d="M22 10l6 10h-5c-7 0-12 6-12 13 0 2 0 3 1 5l-4 2C6 38 5 35 5 33c0-10 8-18 18-18h-1l0-5zM48 18l4 7c2 4 3 8 1 12-2 4-5 7-9 8l1 4c6-1 11-5 14-11 3-6 2-12-1-18l-4-7-6 5zM16 44l7 12 6-4-3-4c6 1 11-1 14-6l-4-2c-2 4-6 6-10 5l2-4-12 3z"/></svg>');
+        }
+
+        /* Larger touch hit area */
+        .card-slot.stock-slot::after {
+            content: "";
+            position: absolute;
+            inset: -8px;
         }
 
         .card {
             position: absolute;
-            width: 70px;
-            height: 95px;
+            width: var(--card-w);
+            height: var(--card-h);
             background: white;
             border: 2px solid #000;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
             user-select: none;
             box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
@@ -116,13 +174,13 @@
         }
 
         .card.dragging {
-            opacity: 0.8;
+            opacity: 0.85;
             z-index: 1000 !important;
         }
 
         .card.back {
             background: linear-gradient(135deg, #0000aa 0%, #0000ff 50%, #0000aa 100%);
-            background-image: 
+            background-image:
                 repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px),
                 repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px);
         }
@@ -138,13 +196,13 @@
         }
 
         .card-rank {
-            font-size: 16px;
+            font-size: clamp(12px, 2.8vw, 16px);
             font-weight: bold;
             line-height: 1;
         }
 
         .card-suit {
-            font-size: 20px;
+            font-size: clamp(14px, 3.2vw, 20px);
             position: absolute;
             top: 50%;
             left: 50%;
@@ -152,7 +210,7 @@
         }
 
         .card-rank-bottom {
-            font-size: 16px;
+            font-size: clamp(12px, 2.8vw, 16px);
             font-weight: bold;
             position: absolute;
             bottom: 4px;
@@ -160,18 +218,12 @@
             transform: rotate(180deg);
         }
 
-        .red {
-            color: #ff0000;
-        }
-
-        .black {
-            color: #000000;
-        }
+        .red { color: #ff0000; }
+        .black { color: #000000; }
 
         #win-screen {
             position: fixed;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.8);
@@ -185,84 +237,39 @@
             background: #c0c0c0;
             border: 3px solid;
             border-color: #ffffff #000000 #000000 #ffffff;
-            padding: 30px;
+            padding: 24px;
             text-align: center;
             box-shadow: inset 1px 1px 0 #dfdfdf, inset -1px -1px 0 #808080;
+            max-width: 90vw;
         }
 
         #win-message h2 {
             font-size: 24px;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             color: #000080;
         }
 
         #win-message p {
             font-size: 16px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .drag-ghost {
             position: fixed;
             pointer-events: none;
             z-index: 9999;
+            width: var(--card-w);
+            height: var(--card-h);
         }
 
-        @media (max-width: 768px) {
-            .card, .card-slot {
-                width: 60px;
-                height: 82px;
-            }
-            
-            .card-rank, .card-rank-bottom {
-                font-size: 14px;
-            }
-            
-            .card-suit {
-                font-size: 18px;
-            }
-
-            #board-content {
-                min-height: 500px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .card, .card-slot {
-                width: 50px;
-                height: 68px;
-            }
-            
-            .card-rank, .card-rank-bottom {
-                font-size: 12px;
-            }
-            
-            .card-suit {
-                font-size: 16px;
-            }
-
-            #header {
-                padding: 6px;
-            }
-
-            #title {
-                font-size: 14px;
-            }
-
-            #score-display {
-                font-size: 12px;
-                gap: 10px;
-            }
-
-            .btn {
-                padding: 5px 10px;
-                font-size: 12px;
-            }
+        @media (max-width: 420px) {
+            #title { font-size: 14px; }
+            #score-display { font-size: 12px; gap: 8px; }
+            .btn { padding: 5px 10px; font-size: 12px; }
         }
 
         @media (orientation: portrait) {
-            body {
-                transform: none;
-            }
+            body { transform: none; }
         }
     </style>
 </head>
@@ -278,8 +285,6 @@
         
         <div id="controls">
             <button class="btn" onclick="newGame()">New Game</button>
-            <button class="btn" onclick="undoMove()">Undo</button>
-            <button class="btn" onclick="hint()">Hint</button>
         </div>
 
         <div id="game-board">
@@ -297,18 +302,16 @@
     </div>
 
     <script>
-        // Audio Context for sounds
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
         function playSound(type) {
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
-            
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
-            
             switch(type) {
                 case 'card':
+                case 'draw':
                     oscillator.frequency.value = 300;
                     gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
@@ -322,12 +325,18 @@
                     oscillator.start(audioContext.currentTime);
                     oscillator.stop(audioContext.currentTime + 0.15);
                     break;
+                case 'recycle':
+                    oscillator.frequency.value = 350;
+                    gainNode.gain.setValueAtTime(0.12, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.12);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.12);
+                    break;
                 case 'win':
                     [523, 587, 659, 698, 784].forEach((freq, i) => {
                         const osc = audioContext.createOscillator();
                         const gain = audioContext.createGain();
-                        osc.connect(gain);
-                        gain.connect(audioContext.destination);
+                        osc.connect(gain); gain.connect(audioContext.destination);
                         osc.frequency.value = freq;
                         gain.gain.setValueAtTime(0.2, audioContext.currentTime + i * 0.1);
                         gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.3);
@@ -352,11 +361,11 @@
                     case 'medium': navigator.vibrate(20); break;
                     case 'heavy': navigator.vibrate(50); break;
                     case 'success': navigator.vibrate([10, 50, 10]); break;
+                    case 'soft': navigator.vibrate(8); break;
                 }
             }
         }
 
-        // Game state
         let deck = [];
         let stock = [];
         let waste = [];
@@ -372,24 +381,46 @@
         let lastClickTime = 0;
         let lastClickTarget = null;
         let isDragging = false;
+        let stockTapGuard = false;
 
         const suits = ['♠', '♥', '♦', '♣'];
         const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
         const rankValues = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
+
+        function computeSizes() {
+            const vw = Math.min(window.innerWidth, screen.width);
+            const gh = 10;
+            const columns = 7;
+            const cardW = Math.floor((vw - gh * (columns + 1)) / columns);
+            const cardH = Math.floor(cardW * (95/70));
+            const clampedW = Math.max(44, Math.min(cardW, 90));
+            const clampedH = Math.max(60, Math.min(cardH, 120));
+            const stackOffset = Math.max(14, Math.min(Math.floor(clampedH * 0.22), 28));
+            document.documentElement.style.setProperty('--card-w', clampedW + 'px');
+            document.documentElement.style.setProperty('--card-h', clampedH + 'px');
+            document.documentElement.style.setProperty('--gap', gh + 'px');
+            document.documentElement.style.setProperty('--stack-offset', stackOffset + 'px');
+            return { cardW: clampedW, cardH: clampedH, gap: gh, stackOffset };
+        }
+
+        let layout = computeSizes();
+        window.addEventListener('resize', () => {
+            layout = computeSizes();
+            updateDisplay();
+        });
 
         function createDeck() {
             deck = [];
             for (let suit of suits) {
                 for (let rank of ranks) {
                     deck.push({
-                        suit: suit,
-                        rank: rank,
+                        suit,
+                        rank,
                         color: (suit === '♥' || suit === '♦') ? 'red' : 'black',
                         faceUp: false
                     });
                 }
             }
-            // Shuffle
             for (let i = deck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -406,7 +437,6 @@
             moves = 0;
             history = [];
             
-            // Deal to tableau
             for (let i = 0; i < 7; i++) {
                 for (let j = i; j < 7; j++) {
                     const card = deck.pop();
@@ -414,10 +444,7 @@
                     tableau[j].push(card);
                 }
             }
-            
-            // Rest to stock
             stock = deck;
-            
             updateDisplay();
             document.getElementById('win-screen').style.display = 'none';
             haptic('medium');
@@ -426,36 +453,59 @@
         function updateDisplay() {
             const board = document.getElementById('board-content');
             board.innerHTML = '';
+
+            const cardWidth = layout.cardW;
+            const cardHeight = layout.cardH;
+            const gap = layout.gap;
+            const stackOffset = layout.stackOffset;
+
+            const topRowY = gap;
+            const stockX = gap;
+
+            // Stock slot with recycle icon
+            const stockSlot = createSlot(stockX, topRowY);
+            stockSlot.classList.add('stock-slot');
+            stockSlot.style.border = '2px dashed rgba(255,255,255,0.5)';
             
-            const cardWidth = window.innerWidth < 480 ? 50 : (window.innerWidth < 768 ? 60 : 70);
-            const cardHeight = window.innerWidth < 480 ? 68 : (window.innerWidth < 768 ? 82 : 95);
-            const gap = 10;
-            const stackOffset = window.innerWidth < 480 ? 15 : 20;
+            // Add recycle icon element
+            const recycleIcon = document.createElement('div');
+            recycleIcon.className = 'recycle-icon';
+            recycleIcon.setAttribute('aria-hidden', 'true');
+            recycleIcon.title = 'Recycle';
+            stockSlot.appendChild(recycleIcon);
             
-            // Stock pile
-            const stockSlot = createSlot(gap, gap);
-            board.appendChild(stockSlot);
-            
-            if (stock.length > 0) {
-                const stockCard = createCardElement(stock[stock.length - 1], false);
-                stockCard.style.left = gap + 'px';
-                stockCard.style.top = gap + 'px';
-                stockCard.style.zIndex = 100;
-                stockCard.onclick = () => {
-                    drawCard();
-                    haptic('light');
-                };
-                board.appendChild(stockCard);
+            // Toggle empty class
+            if (stock.length === 0) {
+                stockSlot.classList.add('empty');
             }
             
-            // Waste pile
-            const wasteSlot = createSlot(gap + cardWidth + gap, gap);
+            stockSlot.onclick = (e) => {
+                if (stockTapGuard) return;
+                stockTapGuard = true;
+                setTimeout(() => (stockTapGuard = false), 120);
+                e.preventDefault();
+                drawFromStock();
+            };
+            board.appendChild(stockSlot);
+
+            if (stock.length > 0) {
+                const stockCard = createCardElement(stock[stock.length - 1], false);
+                stockCard.style.left = stockX + 'px';
+                stockCard.style.top = topRowY + 'px';
+                stockCard.style.zIndex = 100;
+                stockCard.style.pointerEvents = 'none';
+                board.appendChild(stockCard);
+            }
+
+            // Waste
+            const wasteX = gap + cardWidth + gap;
+            const wasteSlot = createSlot(wasteX, topRowY);
             board.appendChild(wasteSlot);
-            
+
             if (waste.length > 0) {
                 const wasteCard = createCardElement(waste[waste.length - 1], true);
-                wasteCard.style.left = (gap + cardWidth + gap) + 'px';
-                wasteCard.style.top = gap + 'px';
+                wasteCard.style.left = wasteX + 'px';
+                wasteCard.style.top = topRowY + 'px';
                 wasteCard.style.zIndex = 100;
                 wasteCard.dataset.from = 'waste';
                 wasteCard.dataset.index = waste.length - 1;
@@ -463,11 +513,11 @@
                 addDoubleClickListener(wasteCard, 'waste', 0, waste.length - 1);
                 board.appendChild(wasteCard);
             }
-            
+
             // Foundations
             for (let i = 0; i < 4; i++) {
                 const x = gap + (cardWidth + gap) * (3 + i);
-                const foundSlot = createSlot(x, gap);
+                const foundSlot = createSlot(x, topRowY);
                 foundSlot.dataset.foundation = i;
                 foundSlot.classList.add('foundation-slot');
                 board.appendChild(foundSlot);
@@ -475,7 +525,7 @@
                 if (foundations[i].length > 0) {
                     const foundCard = createCardElement(foundations[i][foundations[i].length - 1], true);
                     foundCard.style.left = x + 'px';
-                    foundCard.style.top = gap + 'px';
+                    foundCard.style.top = topRowY + 'px';
                     foundCard.style.zIndex = 100;
                     foundCard.dataset.from = 'foundation';
                     foundCard.dataset.pile = i;
@@ -485,11 +535,14 @@
                     board.appendChild(foundCard);
                 }
             }
-            
+
             // Tableau
+            const tableauTopY = topRowY + cardHeight + gap + 20;
+            let maxNeededHeight = tableauTopY + cardHeight + 8 * stackOffset;
+
             for (let i = 0; i < 7; i++) {
                 const x = gap + (cardWidth + gap) * i;
-                const y = gap + cardHeight + gap + 20;
+                const y = tableauTopY;
                 
                 const tabSlot = createSlot(x, y);
                 tabSlot.dataset.tableau = i;
@@ -513,16 +566,21 @@
                             if (idx === tableau[i].length - 1) {
                                 card.faceUp = true;
                                 updateDisplay();
-                                playSound('card');
-                                haptic('light');
+                                playSound('card'); haptic('light');
                             }
                         };
                     }
-                    
                     board.appendChild(cardEl);
                 });
+
+                const pileHeight = y + (Math.max(0, tableau[i].length - 1) * stackOffset) + cardHeight + gap;
+                if (pileHeight > maxNeededHeight) maxNeededHeight = pileHeight;
             }
-            
+
+            const contentWidth = gap + (cardWidth + gap) * 7;
+            document.getElementById('board-content').style.minWidth = contentWidth + 'px';
+            document.getElementById('board-content').style.minHeight = Math.max(maxNeededHeight, window.innerHeight - 140) + 'px';
+
             document.getElementById('score').textContent = score;
             document.getElementById('moves').textContent = moves;
         }
@@ -538,49 +596,69 @@
         function createCardElement(card, faceUp) {
             const cardEl = document.createElement('div');
             cardEl.className = 'card' + (faceUp ? '' : ' back');
-            
             if (faceUp) {
                 const content = document.createElement('div');
                 content.className = 'card-content';
-                
                 const rankTop = document.createElement('div');
                 rankTop.className = 'card-rank ' + card.color;
                 rankTop.textContent = card.rank;
-                
                 const suit = document.createElement('div');
                 suit.className = 'card-suit ' + card.color;
                 suit.textContent = card.suit;
-                
                 const rankBottom = document.createElement('div');
                 rankBottom.className = 'card-rank-bottom ' + card.color;
                 rankBottom.textContent = card.rank;
-                
                 content.appendChild(rankTop);
                 content.appendChild(suit);
                 content.appendChild(rankBottom);
                 cardEl.appendChild(content);
             }
-            
             return cardEl;
+        }
+
+        function drawFromStock() {
+            if (stock.length > 0) {
+                const card = stock.pop();
+                card.faceUp = true;
+                waste.push(card);
+                moves++;
+                playSound('draw');
+                haptic('light');
+                updateDisplay();
+            } else if (waste.length > 0) {
+                recycleWasteToStock();
+            } else {
+                playSound('error');
+                haptic('soft');
+            }
+        }
+
+        function recycleWasteToStock() {
+            if (waste.length === 0) {
+                haptic('soft');
+                return;
+            }
+            while (waste.length) {
+                const c = waste.pop();
+                c.faceUp = false;
+                stock.push(c);
+            }
+            playSound('recycle');
+            haptic('medium');
+            updateDisplay();
         }
 
         function addDoubleClickListener(cardEl, fromType, pileIndex, cardIndex) {
             cardEl.addEventListener('click', (e) => {
                 if (isDragging) return;
-                
                 const currentTime = Date.now();
                 const timeDiff = currentTime - lastClickTime;
-                
                 if (timeDiff < 400 && lastClickTarget === cardEl) {
-                    // Double click detected
-                    e.preventDefault();
-                    e.stopPropagation();
+                    e.preventDefault(); e.stopPropagation();
                     tryAutoMoveToFoundation(fromType, pileIndex, cardIndex);
-                    lastClickTime = 0;
-                    lastClickTarget = null;
+                    lastClickTime = 0; lastClickTarget = null;
                 } else {
-                    lastClickTime = currentTime;
-                    lastClickTarget = cardEl;
+                    lastClickTime = currentTime; lastClickTarget = cardEl;
                 }
             });
         }
@@ -591,51 +669,36 @@
         }
 
         function startDrag(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
+            e.preventDefault(); e.stopPropagation();
             isDragging = false;
-            
             const cardEl = e.currentTarget;
             const rect = cardEl.getBoundingClientRect();
-            
             const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
             const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-            
-            // Calculate offset from card's top-left corner
             dragOffset.x = clientX - rect.left;
             dragOffset.y = clientY - rect.top;
-            
+
             draggedFrom = {
                 type: cardEl.dataset.from,
                 pile: parseInt(cardEl.dataset.pile),
                 index: parseInt(cardEl.dataset.index)
             };
-            
-            // Collect all cards to drag (for tableau stacks)
+
             draggedCards = [];
-            const stackOffset = window.innerWidth < 480 ? 15 : 20;
-            
+            const stackOffset = layout.stackOffset;
+
             if (draggedFrom.type === 'tableau') {
                 const pile = tableau[draggedFrom.pile];
                 for (let i = draggedFrom.index; i < pile.length; i++) {
-                    draggedCards.push({
-                        card: pile[i],
-                        offsetY: (i - draggedFrom.index) * stackOffset
-                    });
+                    draggedCards.push({ card: pile[i], offsetY: (i - draggedFrom.index) * stackOffset });
                 }
             } else if (draggedFrom.type === 'waste') {
-                draggedCards.push({
-                    card: waste[waste.length - 1],
-                    offsetY: 0
-                });
+                if (waste.length) draggedCards.push({ card: waste[waste.length - 1], offsetY: 0 });
             } else if (draggedFrom.type === 'foundation') {
-                draggedCards.push({
-                    card: foundations[draggedFrom.pile][draggedFrom.index],
-                    offsetY: 0
-                });
+                if (foundations[draggedFrom.pile].length)
+                    draggedCards.push({ card: foundations[draggedFrom.pile][draggedFrom.index], offsetY: 0 });
             }
-            
+
             document.addEventListener('mousemove', drag);
             document.addEventListener('mouseup', endDrag);
             document.addEventListener('touchmove', drag, { passive: false });
@@ -645,17 +708,13 @@
         function drag(e) {
             if (!isDragging && draggedCards.length > 0) {
                 isDragging = true;
-                
-                // Create ghost cards for dragging
                 dragGhosts = [];
-                draggedCards.forEach((cardData, idx) => {
+                draggedCards.forEach((cardData) => {
                     const ghost = createCardElement(cardData.card, true);
                     ghost.className = 'card drag-ghost';
                     document.body.appendChild(ghost);
                     dragGhosts.push(ghost);
                 });
-                
-                // Hide original cards
                 const allCards = document.querySelectorAll('.card');
                 allCards.forEach(card => {
                     if (card.dataset.from === draggedFrom.type) {
@@ -665,122 +724,77 @@
                         }
                     }
                 });
-                
-                playSound('card');
-                haptic('light');
+                playSound('card'); haptic('light');
             }
-            
             if (dragGhosts.length === 0) return;
             e.preventDefault();
-            
             const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
             const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-            
-            // Move all ghost cards
+
             dragGhosts.forEach((ghost, idx) => {
                 ghost.style.left = (clientX - dragOffset.x) + 'px';
-                ghost.style.top = (clientY - dragOffset.y + draggedCards[idx].offsetY) + 'px';
+                ghost.style.top  = (clientY - dragOffset.y + draggedCards[idx].offsetY) + 'px';
             });
         }
 
         function endDrag(e) {
             if (dragGhosts.length === 0) {
-                isDragging = false;
-                draggedCards = [];
-                draggedFrom = null;
-                document.removeEventListener('mousemove', drag);
-                document.removeEventListener('mouseup', endDrag);
-                document.removeEventListener('touchmove', drag);
-                document.removeEventListener('touchend', endDrag);
+                cleanupDrag();
                 return;
             }
-            
             const clientX = e.type === 'touchend' ? e.changedTouches[0].clientX : e.clientX;
             const clientY = e.type === 'touchend' ? e.changedTouches[0].clientY : e.clientY;
-            
-            // Find what's under the drop point
             const elements = document.elementsFromPoint(clientX, clientY);
             let placed = false;
-            
+
             for (let element of elements) {
-                if (element.dataset.foundation !== undefined) {
-                    if (draggedCards.length === 1) {
-                        placed = tryPlaceOnFoundation(parseInt(element.dataset.foundation));
-                    }
+                if (element.dataset && element.dataset.foundation !== undefined) {
+                    if (draggedCards.length === 1) placed = tryPlaceOnFoundation(parseInt(element.dataset.foundation));
                     break;
-                } else if (element.dataset.tableau !== undefined) {
+                } else if (element.dataset && element.dataset.tableau !== undefined) {
                     placed = tryPlaceOnTableau(parseInt(element.dataset.tableau));
                     break;
-                } else if (element.classList.contains('card')) {
-                    // Check if dropped on a card
+                } else if (element.classList && element.classList.contains('card')) {
                     if (element.dataset.from === 'tableau') {
                         placed = tryPlaceOnTableau(parseInt(element.dataset.pile));
                         break;
                     }
                 }
             }
-            
-            if (!placed) {
-                playSound('error');
-                haptic('light');
-            }
-            
-            // Clean up ghosts
+            if (!placed) { playSound('error'); haptic('light'); }
+            cleanupDrag();
+            updateDisplay();
+        }
+
+        function cleanupDrag() {
             dragGhosts.forEach(ghost => ghost.remove());
             dragGhosts = [];
             draggedCards = [];
             draggedFrom = null;
             isDragging = false;
-            
             document.removeEventListener('mousemove', drag);
             document.removeEventListener('mouseup', endDrag);
             document.removeEventListener('touchmove', drag);
             document.removeEventListener('touchend', endDrag);
-            
-            updateDisplay();
-        }
-
-        function drawCard() {
-            if (stock.length > 0) {
-                const card = stock.pop();
-                card.faceUp = true;
-                waste.push(card);
-                moves++;
-                playSound('card');
-            } else if (waste.length > 0) {
-                stock = waste.reverse();
-                stock.forEach(c => c.faceUp = false);
-                waste = [];
-                playSound('card');
-            }
-            updateDisplay();
         }
 
         function tryPlaceOnFoundation(foundIndex) {
             if (!draggedFrom || draggedCards.length !== 1) return false;
-            
             const card = draggedCards[0].card;
             const foundation = foundations[foundIndex];
-            
             if (foundation.length === 0) {
-                if (card.rank === 'A') {
-                    moveCardToFoundation(foundIndex);
-                    return true;
-                }
+                if (card.rank === 'A') { moveCardToFoundation(foundIndex); return true; }
             } else {
                 const topCard = foundation[foundation.length - 1];
                 if (card.suit === topCard.suit && rankValues[card.rank] === rankValues[topCard.rank] + 1) {
-                    moveCardToFoundation(foundIndex);
-                    return true;
+                    moveCardToFoundation(foundIndex); return true;
                 }
             }
-            
             return false;
         }
 
         function moveCardToFoundation(foundIndex) {
             const card = draggedCards[0].card;
-            
             if (draggedFrom.type === 'waste') {
                 waste.pop();
             } else if (draggedFrom.type === 'tableau') {
@@ -791,35 +805,23 @@
             } else if (draggedFrom.type === 'foundation') {
                 foundations[draggedFrom.pile].pop();
             }
-            
             foundations[foundIndex].push(card);
-            score += 10;
-            moves++;
-            playSound('place');
-            haptic('medium');
-            
+            score += 10; moves++; playSound('place'); haptic('medium');
             checkWin();
         }
 
         function tryPlaceOnTableau(tabIndex) {
             if (!draggedFrom || draggedCards.length === 0) return false;
-            
             const card = draggedCards[0].card;
             const targetPile = tableau[tabIndex];
-            
             if (targetPile.length === 0) {
-                if (card.rank === 'K') {
-                    moveCardToTableau(tabIndex);
-                    return true;
-                }
+                if (card.rank === 'K') { moveCardToTableau(tabIndex); return true; }
             } else {
                 const topCard = targetPile[targetPile.length - 1];
                 if (card.color !== topCard.color && rankValues[card.rank] === rankValues[topCard.rank] - 1) {
-                    moveCardToTableau(tabIndex);
-                    return true;
+                    moveCardToTableau(tabIndex); return true;
                 }
             }
-            
             return false;
         }
 
@@ -837,65 +839,47 @@
                 const card = foundations[draggedFrom.pile].pop();
                 tableau[tabIndex].push(card);
             }
-            
-            moves++;
-            playSound('place');
-            haptic('medium');
+            moves++; playSound('place'); haptic('medium');
         }
 
         function tryAutoMoveToFoundation(fromType, pileIndex, cardIndex) {
             let card;
-            
             if (fromType === 'tableau') {
                 if (cardIndex !== tableau[pileIndex].length - 1) return;
                 card = tableau[pileIndex][cardIndex];
             } else if (fromType === 'waste') {
                 card = waste[waste.length - 1];
             } else if (fromType === 'foundation') {
-                // Can't auto-move from foundation to foundation
                 return;
             } else {
                 return;
             }
-            
             for (let i = 0; i < 4; i++) {
                 const foundation = foundations[i];
                 if (foundation.length === 0 && card.rank === 'A') {
                     if (fromType === 'tableau') {
                         tableau[pileIndex].pop();
-                        if (tableau[pileIndex].length > 0) {
+                        if (tableau[pileIndex].length > 0)
                             tableau[pileIndex][tableau[pileIndex].length - 1].faceUp = true;
-                        }
                     } else if (fromType === 'waste') {
                         waste.pop();
                     }
                     foundations[i].push(card);
-                    score += 10;
-                    moves++;
-                    playSound('place');
-                    haptic('medium');
-                    updateDisplay();
-                    checkWin();
-                    return;
+                    score += 10; moves++; playSound('place'); haptic('medium');
+                    updateDisplay(); checkWin(); return;
                 } else if (foundation.length > 0) {
                     const topCard = foundation[foundation.length - 1];
                     if (card.suit === topCard.suit && rankValues[card.rank] === rankValues[topCard.rank] + 1) {
                         if (fromType === 'tableau') {
                             tableau[pileIndex].pop();
-                            if (tableau[pileIndex].length > 0) {
+                            if (tableau[pileIndex].length > 0)
                                 tableau[pileIndex][tableau[pileIndex].length - 1].faceUp = true;
-                            }
                         } else if (fromType === 'waste') {
                             waste.pop();
                         }
                         foundations[i].push(card);
-                        score += 10;
-                        moves++;
-                        playSound('place');
-                        haptic('medium');
-                        updateDisplay();
-                        checkWin();
-                        return;
+                        score += 10; moves++; playSound('place'); haptic('medium');
+                        updateDisplay(); checkWin(); return;
                     }
                 }
             }
@@ -908,23 +892,11 @@
                     document.getElementById('final-score').textContent = score;
                     document.getElementById('final-moves').textContent = moves;
                     document.getElementById('win-screen').style.display = 'flex';
-                    playSound('win');
-                    haptic('success');
+                    playSound('win'); haptic('success');
                 }, 300);
             }
         }
 
-        function undoMove() {
-            haptic('light');
-            playSound('card');
-        }
-
-        function hint() {
-            haptic('light');
-            playSound('card');
-        }
-
-        // Initialize
         newGame();
     </script>
 </body>
