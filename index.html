@@ -38,6 +38,8 @@
             padding: 8px;
             overflow: hidden;
             touch-action: manipulation;
+            height: 100vh; /* fallback */
+            height: calc(var(--vh, 1vh) * 100);
         }
         
         #controls {
@@ -315,7 +317,7 @@
                 <div id="foundation-2" class="slot foundation"></div>
                 <div id="foundation-3" class="slot foundation"></div>
             </div>
-            
+        
             <div id="tableau">
                 <div id="tableau-0" class="tableau-pile"></div>
                 <div id="tableau-1" class="tableau-pile"></div>
@@ -369,6 +371,15 @@
             }
             lastTouchEnd = now;
         }, { passive: false });
+
+        // Set --vh custom property to handle mobile browser bottom navbar
+        function setVh() {
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        window.addEventListener('resize', setVh);
+        window.addEventListener('orientationchange', setVh);
+        setVh();
 
         const suits = ['♠', '♥', '♦', '♣'];
         const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
