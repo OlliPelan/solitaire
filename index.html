@@ -19,17 +19,22 @@
       position: fixed;
       -webkit-text-size-adjust: 100%;
       overscroll-behavior: none;
+      background: url('https://cdn.abacus.ai/images/61532888-b4fb-486e-a6e6-6048b597d710.png') center center / cover no-repeat fixed;
+      /* Moved background here for better mobile visibility */
+      background-attachment: fixed;
+      background-size: cover;
+      background-position: center center;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: url('https://cdn.abacus.ai/images/61532888-b4fb-486e-a6e6-6048b597d710.png') center center / cover no-repeat fixed;
       color: white;
       display: flex;
       flex-direction: column;
       user-select: none;
       -webkit-user-select: none;
       padding-bottom: env(safe-area-inset-bottom, 0);
+      background: transparent; /* transparent to show html background */
     }
 
     #game-container {
@@ -37,7 +42,7 @@
       display: flex;
       flex-direction: column;
       padding: 8px;
-      padding-top: 128px;
+      padding-top: 68px; /* moved up 60px from 128px */
       overflow: hidden;
       height: 100dvh;
       height: calc(var(--vh, 1vh) * 100);
@@ -383,7 +388,8 @@
       if (stock.length > 0) {
         const card = stock.pop(); card.faceUp = true; waste.push(card); moves++; playSound(300, 0.05); haptic('light');
       } else if (waste.length > 0) {
-        stock = waste.reverse(); waste = []; stock.forEach(card => card.faceUp = false);
+        stock = waste.reverse(); waste = [];
+        stock.forEach(card => card.faceUp = false);
         playSound(350, 0.1); haptic('medium');
       }
       updateDisplay();
