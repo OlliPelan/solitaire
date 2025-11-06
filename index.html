@@ -2,14 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-
-  <!-- Hardened viewport for iOS + Android -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <!-- Legacy iOS behavior helper -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1e3c72">
-
   <title>Solitaire</title>
   <style>
     * {
@@ -21,33 +17,33 @@
       height: 100%;
       overflow: hidden;
       position: fixed;
-      background: #000;
       -webkit-text-size-adjust: 100%;
-      overscroll-behavior: none;              /* prevent pull-to-refresh bouncing */
+      overscroll-behavior: none;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+      background: url('https://cdn.abacus.ai/images/61532888-b4fb-486e-a6e6-6048b597d710.png') center center / cover no-repeat fixed;
       color: white;
       display: flex;
       flex-direction: column;
       user-select: none;
       -webkit-user-select: none;
-      /* Respect safe areas (iOS notch) */
       padding-bottom: env(safe-area-inset-bottom, 0);
     }
 
-    /* Use 100dvh where supported, fallback to --vh on others */
     #game-container {
       flex: 1;
       display: flex;
       flex-direction: column;
       padding: 8px;
+      padding-top: 128px;
       overflow: hidden;
-      height: 100dvh;                      /* modern units (Chrome/Safari 16+, iOS 16+) */
-      height: calc(var(--vh, 1vh) * 100);  /* fallback */
-      touch-action: none;                  /* we handle gestures ourselves */
+      height: 100dvh;
+      height: calc(var(--vh, 1vh) * 100);
+      touch-action: none;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
     }
 
     #controls {
@@ -55,14 +51,13 @@
       justify-content: space-between;
       align-items: center;
       padding: 8px 12px;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(10px);
       border-radius: 16px;
       margin-bottom: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
       z-index: 100;
       position: relative;
-      /* Don’t let controls go under the iOS home indicator */
       margin-bottom: calc(8px + env(safe-area-inset-bottom, 0));
     }
 
@@ -70,7 +65,7 @@
       font-size: 16px;
       font-weight: 600;
       color: #fbbf24;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
     }
 
     #new-game-btn {
@@ -78,7 +73,7 @@
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       border: none; border-radius: 12px; color: white; font-weight: 600; font-size: 14px;
       cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); transition: transform 0.1s;
-      touch-action: manipulation; /* allow quick tap without double-tap zoom */
+      touch-action: manipulation;
     }
     #new-game-btn:active { transform: scale(0.95); }
 
@@ -88,7 +83,6 @@
       flex-direction: column;
       gap: 8px;
       min-height: 0;
-      /* Prevent browser swipe back/forward gestures interfering */
       overscroll-behavior: contain;
       touch-action: none;
     }
@@ -109,8 +103,8 @@
     }
 
     .slot {
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px dashed rgba(255, 255, 255, 0.3);
+      background: rgba(0, 0, 0, 0.3);
+      border: 2px dashed rgba(255, 255, 255, 0.4);
       border-radius: 12px;
       position: relative;
       backdrop-filter: blur(5px);
@@ -118,7 +112,7 @@
       overflow: hidden;
     }
 
-    .slot.drag-over { background: rgba(16, 185, 129, 0.3); border-color: #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
+    .slot.drag-over { background: rgba(16, 185, 129, 0.4); border-color: #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
     .empty-space { background: transparent; border: none; }
     .tableau-pile { position: relative; min-height: 100%; }
 
@@ -127,13 +121,13 @@
       width: 100%; height: 100%;
       background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
       cursor: pointer;
       display: flex; flex-direction: column; justify-content: space-between;
       padding: 6px;
       border: 2px solid rgba(0, 0, 0, 0.1);
       top: 0; left: 0;
-      touch-action: none; /* avoid browser gestures */
+      touch-action: none;
     }
 
     .tableau-pile .card { width: 100%; height: auto; aspect-ratio: 2.5/3.5; position: absolute; }
@@ -160,8 +154,8 @@
       font-size: 32px; color: rgba(255, 255, 255, 0.3);
       touch-action: manipulation;
     }
-    #stock-slot.empty::before { content: '↻'; font-size: 40px; color: rgba(255, 255, 255, 0.5); animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:.8;transform:scale(1.1)} }
+    #stock-slot.empty::before { content: '↻'; font-size: 40px; color: rgba(255, 255, 255, 0.6); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:.9;transform:scale(1.1)} }
 
     #win-screen {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -225,24 +219,20 @@
   </div>
 
   <script>
-    // Orientation lock (best effort)
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock('portrait').catch(() => {});
     }
 
-    // Fullscreen on first interaction (Android/Chrome best)
     function requestFs() {
       const el = document.documentElement;
       const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
       if (req) req.call(el).catch(()=>{});
     }
-    // Attach to a safe tap target (new game button) and board
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('new-game-btn').addEventListener('click', requestFs, { once: true });
       document.getElementById('board').addEventListener('pointerdown', requestFs, { once: true });
     });
 
-    // Robust 100vh fix across mobile browsers
     function setVh() {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -253,15 +243,12 @@
     document.addEventListener('visibilitychange', setVh);
     window.addEventListener('pageshow', setVh);
 
-    // STRONG ZOOM PREVENTION
-    // 1) Prevent multi-touch (pinch) start/move
     function blockIfMultiTouch(e) {
       if (e.touches && e.touches.length > 1) e.preventDefault();
     }
     document.addEventListener('touchstart', blockIfMultiTouch, { passive: false });
     document.addEventListener('touchmove', blockIfMultiTouch, { passive: false });
 
-    // 2) Prevent double-tap zoom
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function(e) {
       const now = Date.now();
@@ -269,17 +256,14 @@
       lastTouchEnd = now;
     }, { passive: false });
 
-    // 3) Prevent ctrl+wheel zoom (desktop/laptops, Chromebooks)
     document.addEventListener('wheel', function(e) {
       if (e.ctrlKey) e.preventDefault();
     }, { passive: false });
 
-    // 4) iOS gesture events as a backstop (older iOS)
     ['gesturestart','gesturechange','gestureend'].forEach(type => {
       document.addEventListener(type, e => e.preventDefault(), { passive: false });
     });
 
-    // GAME LOGIC (unchanged except small touch-action tweaks)
     const suits = ['♠','♥','♦','♣'];
     const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
     let deck = [], stock = [], waste = [], foundations = [[],[],[],[]], tableau = [[],[],[],[],[],[],[]];
